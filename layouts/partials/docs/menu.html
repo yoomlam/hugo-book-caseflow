@@ -8,7 +8,16 @@
 {{ partial "docs/inject/menu-before" . }}
 {{ partial "docs/menu-hugo" .Site.Menus.before }}
 
-{{ if .Site.Params.BookMenuBundle }}
+{{ if true }}
+  {{ partial "sidebar" . }}
+{{ else if true}}
+  {{ partial "sidebar-debug" . }}
+{{ else if true}}
+    {{ $currentPage := . }}
+    {{ range .Site.Menus.main }}
+    <li><a class="sidebar-nav-item{{if or ($currentPage.IsMenuCurrent "main" .) ($currentPage.HasMenuCurrent "main" .) }} active{{end}}" href="{{ .URL }}" title="{{ .Title }}">{{ .Name }}</a></li>
+    {{ end }}
+{{ else if .Site.Params.BookMenuBundle }}
   {{ partial "docs/menu-bundle" . }}
 {{ else }}
   {{ partial "docs/menu-filetree" . }}
