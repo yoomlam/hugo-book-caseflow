@@ -4,50 +4,53 @@
     {{- $href := printf "href=\"%s\"" $.RelPermalink -}}
     {{- replace .Content $href (print $href "class=active") | safeHTML -}}
   {{ end }}
+
   <ul>
     {{ $currentPage := . }}
-    {{ $visibleMenuItems := (where .Site.Menus.navmenu "Weight" "gt" 0 ) }}
-    {{ $sortedMenuItems := (sort (sort $visibleMenuItems "Page.Weight") "Weight") }}
-    {{ range $sortedMenuItems }}
-      {{ $sectionId := print "section-" .Identifier }}
-      <li id="{{ $sectionId }}">
-        <!-- https://gohugo.io/templates/menu-templates/#using-page-in-menus -->
-        <!-- `with` dereferences `.Page` so that an error doesn't occur if it is null -->
-        {{ $pageViaMenu := .Page }} {{ with .Page }}{{ $pageViaMenu = .Page }}{{ end }}
-        {{ $linkLabel := (.Name | default .Title | default .Identifier | default .URL) }}
-        {{ if .HasChildren }}
-          {{ $inputId := print "input-" $sectionId }}
-          {{ $active := ($currentPage.IsMenuCurrent "navmenu" .) }}
-          <!-- hasactive is false if it is active -->
-          {{ $hasactive := cond $active false ($currentPage.HasMenuCurrent "navmenu" .) }}
-          {{ if $pageViaMenu.Params.menu.navmenu.collapsible }}
-            <input type="checkbox" id="{{ $inputId }}" class="toggle" {{ if or $active $hasactive }} checked{{ end }} />
-          {{ end }}
-          <label for="{{ $inputId }}" class="flex justify-between {{ if $hasactive }}hasactive{{ end }} {{ if $active }}active{{ end }}">
-            <a href="{{ .URL }}" class="{{ if $hasactive }}hasactive{{ end }} {{ if $active }}active{{ end }}">
-              {{- $linkLabel -}}
-            </a>
-          </label>
-          <ul class="sub-menu">
-            {{ range (sort (sort .Children "Page.Weight") "Weight") }}
-              {{ $childpageViaMenu := .Page }} {{ with .Page }}{{ $childpageViaMenu = .Page }}{{ end }}
-              {{ $childLinkLabel := (.Name | default .Title | default .Identifier | default .URL) }}
-              <li class="{{ if $currentPage.IsMenuCurrent "navmenu" . }}active{{ end }}">
-                <a href="{{ .URL }}">{{- $childLinkLabel -}}</a>
-              </li>
-            {{ end }}
-          </ul>
-        {{ else }}
-          <a href="{{ .URL }}" class="{{ if $currentPage.IsMenuCurrent "navmenu" . }}active{{ end }}">
-            {{ .Pre }}
-            <span>{{- $linkLabel -}}</span>
-          </a>
-        {{ end }}
-      </li>
+    {{ $visibleMenuItems := (where (where .Site.Menus.navmenu "Page" "!=" nil) "Weight" "gt" 0 ) }}
+    {{ range (sort (sort $visibleMenuItems "Page.Weight") "Weight") }}
+      {{ template "sidebar-menu-item" (dict "context" .
+                                            "currentPage" $currentPage
+                                      ) }}
     {{ end }}
   </ul>
+
   {{ with .Site.GetPage "/menu/footer" }}
     {{- $href := printf "href=\"%s\"" $.RelPermalink -}}
     {{- replace .Content $href (print $href "class=active") | safeHTML -}}
   {{ end }}
 </aside>
+
+{{ define "sidebar-menu-item" }}
+  {{ $id := .context.Identifier | default (md5 .context.URL) }}
+  {{ $inputId := print "input-" $id }}
+  {{ $active := .currentPage.IsMenuCurrent "navmenu" .context }}
+  <!-- hasactive is false if it is active -->
+  {{ $hasactive := cond $active false (.currentPage.HasMenuCurrent "navmenu" .context) }}
+  <li id='{{ print "menuitem-" $id }}'>
+      <!-- `with` dereferences `.Page` so that an error doesn't occur if it is null -->
+    {{ $pageViaMenu := .context.Page }} {{ with .context.Page }}{{ $pageViaMenu = .Page }}{{ end }}
+    {{ if (and .context.HasChildren $pageViaMenu.Params.menu.navmenu.collapsible) }}
+      <input type="checkbox" id="{{ $inputId }}" class="toggle" {{ if or $active $hasactive }} checked{{ end }} />
+    {{ end }}
+    <label for="{{ $inputId }}" class="flex justify-between {{ if $hasactive }}hasactive{{ end }} {{ if $active }}active{{ end }}">
+      <a href="{{ .context.URL }}" class="{{ if $hasactive }}hasactive{{ end }} {{ if $active }}active{{ end }}">
+        {{ with .context }}
+          {{- .Name | default .Title | default .Identifier | default .URL -}}
+        {{ end }}
+      </a>
+    </label>
+
+    {{ if .context.HasChildren }}
+      <ul class="sub-menu">
+        {{ $currentPage := .currentPage }}
+        {{ $visibleMenuItems := (where .context.Children "Weight" "ge" 0 ) }}
+        {{ range (sort (sort $visibleMenuItems "Page.Weight") "Weight") }}
+          {{ template "sidebar-menu-item" (dict "context" .
+                                                "currentPage" $currentPage
+                                          ) }}
+        {{ end }}
+      </ul>
+    {{ end }}
+  </li>
+{{ end }}
