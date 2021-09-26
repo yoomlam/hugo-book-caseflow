@@ -1,28 +1,10 @@
-{{- if .Page.Site.Params.BookPortableLinks -}}
-  {{- template "portable-link" . -}}
-{{- else -}}
-  <a href="{{ .Destination | safeURL }}"{{ with .Title}} title="{{ . }}"{{ end }}>{{ .Text | safeHTML }}</a>
-{{- end -}}
-
-{{- define "portable-link" -}}
-  {{- $destination := .Destination }}
-  {{- $isRemote := or (in .Destination ":") (strings.HasPrefix .Destination "//") }}
-  {{- if not $isRemote }}
-    {{- $url := urls.Parse .Destination }}
-    {{- $path := strings.TrimSuffix "/_index.md" $url.Path }}
-    {{- $path = strings.TrimSuffix "/_index" $path }}
-    {{- $path = strings.TrimSuffix ".md" $path }}
-    {{- $page := .Page.GetPage $path }}
-    {{- if $page }}
-      {{- $destination = $page.RelPermalink }}
-      {{- if $url.Fragment }}
-        {{- $destination = print $destination "#" $url.Fragment }}
-      {{- end }}
-    {{- else if fileExists (print .Page.File.Dir .Destination) }}
-      <!-- Nothing -->
-    {{- else -}}
-      {{- warnf "Page '%s' not found in '%s'" .Destination .Page.File }}
-    {{- end }}
-  {{- end }}
-  <a href="{{ $destination | safeURL }}"{{ with .Title}} title="{{ . }}"{{ end }}>{{ .Text | safeHTML }}</a>
-{{- end -}}
+{{/* Needed to link to correct page. https://github.com/bep/portable-hugo-links/tree/master/layouts/_default/_markup */}}
+{{ $link := .Destination }}
+{{ $isRemote := strings.HasPrefix $link "http" }}
+{{- if not $isRemote -}}
+  {{ $url := urls.Parse .Destination }}
+  {{- if $url.Path -}}
+    {{ $fragment := "" }}
+    {{- with $url.Fragment }}{{ $fragment = printf "#%s" . }}{{ end -}}
+    {{- with .Page.GetPage $url.Path }}{{ $link = printf "%s%s" .RelPermalink $fragment }}{{ end }}{{ end -}}
+{{- end -}}<a href="{{ $link | safeURL }}"{{ with .Title}} title="{{ . }}"{{ end }}{{ if $isRemote }} target="_blank"{{ end }}>{{- .Text | safeHTML -}}</a>
