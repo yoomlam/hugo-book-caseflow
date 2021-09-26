@@ -1,8 +1,8 @@
 
 // use entire screen width
 main.container {
-    max-width: unset;
-    margin: 0 auto;
+  max-width: unset;
+  margin: 0 auto;
 }
 
 html {
@@ -11,8 +11,14 @@ html {
 }
 
 p code {
-    background-color: #eeeeee;
-    font-size: smaller;
+  background-color: #eeeeee;
+  font-size: smaller;
+}
+
+.markdown pre,
+pre {
+  font-size: smaller;
+  padding: 4px;
 }
 
 @import "heading_permalink";
